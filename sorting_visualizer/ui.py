@@ -37,6 +37,7 @@ class UISnapshot:
     speed_value: int
     ui_scale_label: str
     is_running: bool
+    show_help: bool
     can_start: bool
     can_pause: bool
     can_step: bool
@@ -221,6 +222,9 @@ class UIManager:
         for control in self.controls:
             self._draw_button(surface, control)
 
+        if snapshot.show_help:
+            self._draw_help_overlay(surface, layout)
+
     def _compute_control_layout(self, card: pygame.Rect) -> ControlLayout:
         inset = self.s(16)
         inner = card.inflate(-inset, -inset)
@@ -393,6 +397,8 @@ class UIManager:
             gloss_alpha=16,
         )
         surface.blit(self.micro_font.render("INTERACTIVE SORTING VISUALIZER", True, config.TEXT_SECONDARY), (left, rect.y + self.s(14)))
+        help_label = self.micro_font.render("F1 / ? HELP", True, config.ACCENT)
+        surface.blit(help_label, help_label.get_rect(topright=(rect.right - self.s(18), rect.y + self.s(14))))
         surface.blit(self.hero_font.render("Neon Sorting Studio", True, config.TEXT_PRIMARY), (left, rect.y + self.s(28)))
         surface.blit(
             self.small_font.render("Smooth sorting visuals with responsive controls.", True, config.TEXT_SECONDARY),
@@ -675,3 +681,97 @@ class UIManager:
         border = mix_color(config.PANEL_BORDER, config.TEXT_SECONDARY, 0.08 + hover * 0.08)
         text = config.TEXT_PRIMARY
         return fill, border, text, hover * 0.08, 18
+
+    def _draw_help_overlay(self, surface: pygame.Surface, layout: AppLayout) -> None:
+        scrim = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
+        scrim.fill((4, 8, 18, 168))
+        surface.blit(scrim, (0, 0))
+
+        width = min(self.s(760), max(self.s(540), surface.get_width() - self.s(96)))
+        height = min(self.s(436), max(self.s(320), surface.get_height() - self.s(96)))
+        rect = pygame.Rect(0, 0, width, height)
+        rect.center = layout.canvas_card.center
+
+        draw_panel(
+            surface,
+            rect,
+            mix_color(config.PANEL_FILL, config.PANEL_INNER, 0.24),
+            config.CANVAS_BORDER,
+            self.s(config.PANEL_RADIUS),
+            glow_color=config.ACCENT,
+            glow_strength=0.16,
+            shadow_alpha=72,
+            border_alpha=148,
+            gloss_alpha=14,
+        )
+
+        left = rect.x + self.s(26)
+        top = rect.y + self.s(20)
+        surface.blit(self.section_font.render("Shortcut Guide", True, config.TEXT_PRIMARY), (left, top))
+        surface.blit(
+            self.small_font.render("Press F1, ?, Esc, or click anywhere to close this overlay.", True, config.TEXT_SECONDARY),
+            (left, top + self.s(24)),
+        )
+
+        divider_y = top + self.s(58)
+        pygame.draw.line(surface, with_alpha(config.GRID_LINE, 144), (left, divider_y), (rect.right - self.s(26), divider_y), 1)
+
+        columns = [
+            (
+                "Playback",
+                [
+                    ("Enter", "start sorting"),
+                    ("Space", "pause or resume"),
+                    ("N", "advance a single event"),
+                    ("R", "reset the current shuffled array"),
+                    ("H", "generate a new shuffle"),
+                ],
+            ),
+            (
+                "Tuning",
+                [
+                    ("1-5", "pick an algorithm"),
+                    ("Left / Right", "cycle algorithms"),
+                    ("[ / ]", "change array size"),
+                    ("- / =", "change playback speed"),
+                    (", / .", "change interface scale"),
+                ],
+            ),
+        ]
+
+        column_width = (rect.width - self.s(52) - self.s(18)) // 2
+        for index, (title, items) in enumerate(columns):
+            column_rect = pygame.Rect(left + index * (column_width + self.s(18)), divider_y + self.s(18), column_width, rect.height - self.s(126))
+            self._draw_shortcut_column(surface, column_rect, title, items)
+
+        footer_text = self.small_font.render("Sorting state is preserved while the guide is open.", True, config.TEXT_MUTED)
+        surface.blit(footer_text, footer_text.get_rect(bottomleft=(left, rect.bottom - self.s(20))))
+
+    def _draw_shortcut_column(
+        self,
+        surface: pygame.Surface,
+        rect: pygame.Rect,
+        title: str,
+        items: list[tuple[str, str]],
+    ) -> None:
+        surface.blit(self.micro_font.render(title.upper(), True, config.TEXT_SECONDARY), (rect.x, rect.y))
+        top = rect.y + self.s(24)
+
+        for index, (hotkey, description) in enumerate(items):
+            row = pygame.Rect(rect.x, top + index * self.s(52), rect.width, self.s(42))
+            draw_panel(
+                surface,
+                row,
+                mix_color(config.PANEL_INNER, config.PANEL_FILL, 0.18),
+                config.PANEL_BORDER,
+                self.s(16),
+                shadow_alpha=18,
+                border_alpha=84,
+                gloss_alpha=6,
+            )
+            key_badge = pygame.Rect(row.x + self.s(10), row.y + self.s(9), self.s(96), row.height - self.s(18))
+            pygame.draw.rect(surface, mix_color(config.ACCENT_SOFT, config.ACCENT, 0.18), key_badge, border_radius=self.s(9))
+            pygame.draw.rect(surface, with_alpha(lighten(config.ACCENT, 0.14), 220), key_badge, width=1, border_radius=self.s(9))
+            key_surface = self.micro_font.render(hotkey, True, config.TEXT_PRIMARY)
+            surface.blit(key_surface, key_surface.get_rect(center=key_badge.center))
+            surface.blit(self.small_font.render(description, True, config.TEXT_SECONDARY), (key_badge.right + self.s(12), row.y + self.s(12)))

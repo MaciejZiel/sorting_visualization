@@ -40,6 +40,7 @@ class SortingVisualizerApp:
         self.generator: SortGenerator | None = None
         self.auto_running = False
         self.completed = False
+        self.show_help = False
         self.step_accumulator = 0.0
         self.scene_time = 0.0
 
@@ -84,8 +85,10 @@ class SortingVisualizerApp:
                     running = self._handle_key(event)
                 elif event.type in (pygame.VIDEORESIZE, pygame.WINDOWRESIZED):
                     self._resize_window((event.x, event.y))
+                elif self.show_help and event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    self.show_help = False
                 else:
-                    action = self.ui.handle_event(event)
+                    action = None if self.show_help else self.ui.handle_event(event)
                     if action:
                         self._handle_action(action)
 
@@ -117,7 +120,13 @@ class SortingVisualizerApp:
 
     def _handle_key(self, event: pygame.event.Event) -> bool:
         if event.key == pygame.K_ESCAPE:
+            if self.show_help:
+                self.show_help = False
+                return True
             return False
+        if event.key == pygame.K_F1 or (event.key == pygame.K_SLASH and event.mod & pygame.KMOD_SHIFT):
+            self.show_help = not self.show_help
+            return True
         if event.key == pygame.K_RETURN:
             self.start_sorting()
         elif event.key == pygame.K_SPACE:
@@ -208,6 +217,7 @@ class SortingVisualizerApp:
             speed_value=self.current_speed,
             ui_scale_label=self.current_ui_scale_label,
             is_running=self.auto_running,
+            show_help=self.show_help,
             can_start=self.generator is None,
             can_pause=self.generator is not None and not self.completed,
             can_step=not self.completed,

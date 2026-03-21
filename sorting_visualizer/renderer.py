@@ -9,6 +9,8 @@ from sorting_visualizer import config
 from sorting_visualizer.drawing import darken, draw_glow, draw_panel, exp_lerp, lighten, mix_color, with_alpha
 from sorting_visualizer.sorting import SortEvent
 
+_background_cache: dict[tuple[int, int], pygame.Surface] = {}
+
 
 @dataclass(slots=True)
 class BarSprite:
@@ -30,11 +32,7 @@ class BarSprite:
 
 def draw_scene_background(surface: pygame.Surface, phase: float) -> None:
     width, height = surface.get_size()
-
-    for y in range(height):
-        blend = y / max(height - 1, 1)
-        color = mix_color(config.BACKGROUND_TOP, config.BACKGROUND_BOTTOM, blend)
-        pygame.draw.line(surface, color, (0, y), (width, y))
+    surface.blit(_get_background_base((width, height)), (0, 0))
 
     overlay = pygame.Surface((width, height), pygame.SRCALPHA)
     auroras = [
@@ -47,11 +45,26 @@ def draw_scene_background(surface: pygame.Surface, phase: float) -> None:
         rect.center = (int(center[0]), int(center[1]))
         pygame.draw.ellipse(overlay, with_alpha(color, alpha), rect)
         pygame.draw.ellipse(overlay, with_alpha(color, alpha * 0.45), rect.inflate(160, 120))
+    surface.blit(overlay, (0, 0))
+
+
+def _get_background_base(size: tuple[int, int]) -> pygame.Surface:
+    cached = _background_cache.get(size)
+    if cached is not None:
+        return cached
+
+    width, height = size
+    base = pygame.Surface(size)
+    for y in range(height):
+        blend = y / max(height - 1, 1)
+        color = mix_color(config.BACKGROUND_TOP, config.BACKGROUND_BOTTOM, blend)
+        pygame.draw.line(base, color, (0, y), (width, y))
 
     vignette = pygame.Surface((width, height), pygame.SRCALPHA)
     pygame.draw.rect(vignette, (0, 0, 0, 32), vignette.get_rect(), width=120, border_radius=0)
-    surface.blit(overlay, (0, 0))
-    surface.blit(vignette, (0, 0))
+    base.blit(vignette, (0, 0))
+    _background_cache[size] = base
+    return base
 
 
 class BarVisualizer:

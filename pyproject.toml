@@ -12,6 +12,8 @@ dependencies = [
     "pygame>=2.6,<3.0",
 ]
 
+[project.scripts]
+neon-sorting-studio = "sorting_visualizer.app:main"
+
 [tool.setuptools.packages.find]
 include = ["sorting_visualizer*"]
-

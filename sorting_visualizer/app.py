@@ -400,3 +400,7 @@ class SortingVisualizerApp:
         clamped_size = self._clamp_window_size(size)
         if clamped_size != self.screen.get_size():
             self.screen = pygame.display.set_mode(clamped_size, pygame.RESIZABLE)
+
+
+def main() -> None:
+    SortingVisualizerApp().run()

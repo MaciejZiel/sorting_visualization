@@ -31,6 +31,7 @@ class UISnapshot:
     swaps: int
     writes: int
     elapsed: float
+    sorted_count: int
     array_size: int
     speed_label: str
     speed_value: int
@@ -484,8 +485,8 @@ class UIManager:
         if rect.height < self.s(146):
             compact = [
                 f"Comparisons {snapshot.comparisons:,}   Swaps {snapshot.swaps:,}",
-                f"Elapsed {snapshot.elapsed:05.2f}s   Writes {snapshot.writes:,}",
-                f"Array {snapshot.array_size}   Speed {snapshot.speed_label}   UI {snapshot.ui_scale_label}",
+                f"Runtime {snapshot.elapsed:05.2f}s   Writes {snapshot.writes:,}",
+                f"Progress {snapshot.sorted_count}/{snapshot.array_size}   Speed {snapshot.speed_label}",
             ]
             for index, text in enumerate(compact):
                 surface.blit(self.small_font.render(text, True, config.TEXT_SECONDARY if index == 0 else config.TEXT_MUTED), (left, rect.y + self.s(44) + index * self.s(18)))
@@ -500,7 +501,7 @@ class UIManager:
         major_stats = [
             ("Comparisons", f"{snapshot.comparisons:,}", config.ACCENT),
             ("Swaps", f"{snapshot.swaps:,}", config.BAR_UPDATE),
-            ("Elapsed", f"{snapshot.elapsed:05.2f}s", config.SUCCESS),
+            ("Runtime", f"{snapshot.elapsed:05.2f}s", config.SUCCESS),
         ]
 
         for index, (label, value, accent) in enumerate(major_stats):
@@ -510,9 +511,9 @@ class UIManager:
         details_top = top + stat_height + self.s(16)
         detail_rows = [
             ("Writes", f"{snapshot.writes:,}"),
+            ("Progress", f"{snapshot.sorted_count}/{snapshot.array_size}"),
             ("Array size", f"{snapshot.array_size} bars"),
             ("Speed", f"{snapshot.speed_label} · {snapshot.speed_value}/s"),
-            ("UI scale", snapshot.ui_scale_label),
         ]
 
         for index, (label, value) in enumerate(detail_rows):

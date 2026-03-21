@@ -8,7 +8,7 @@ import pygame
 from sorting_visualizer import config
 from sorting_visualizer.drawing import clamp
 from sorting_visualizer.renderer import BarVisualizer, draw_scene_background
-from sorting_visualizer.sorting import ALGORITHMS, SortEvent
+from sorting_visualizer.sorting import ALGORITHMS, SortEvent, SortGenerator
 from sorting_visualizer.ui import UIManager, UISnapshot
 
 
@@ -27,7 +27,7 @@ class SortingVisualizerApp:
         display_size = self._get_display_size()
         self.ui_scale_index = self._detect_ui_scale_index(display_size)
         window_size = self._initial_window_size(display_size)
-        self.screen = pygame.display.set_mode(window_size, pygame.RESIZABLE)
+        self.screen = pygame.display.set_mode(self._clamp_window_size(window_size), pygame.RESIZABLE)
         self.clock = pygame.time.Clock()
         self.ui = UIManager(self.current_ui_scale)
         self.visualizer = BarVisualizer(self.current_ui_scale)
@@ -37,7 +37,7 @@ class SortingVisualizerApp:
         self.array_size = config.DEFAULT_ARRAY_SIZE
         self.speed_index = config.DEFAULT_SPEED_INDEX
         self.original_values: list[int] = []
-        self.generator = None
+        self.generator: SortGenerator | None = None
         self.auto_running = False
         self.completed = False
         self.step_accumulator = 0.0
@@ -82,11 +82,15 @@ class SortingVisualizerApp:
                     running = False
                 elif event.type == pygame.KEYDOWN:
                     running = self._handle_key(event)
+                elif event.type in (pygame.VIDEORESIZE, pygame.WINDOWRESIZED):
+                    self._resize_window((event.x, event.y))
                 else:
                     action = self.ui.handle_event(event)
                     if action:
                         self._handle_action(action)
 
+            layout = self.ui.compute_layout(self.screen.get_size())
+            self.visualizer.set_canvas(layout.bar_area)
             self._advance_sort(dt)
             self.visualizer.update(dt)
 
@@ -198,6 +202,7 @@ class SortingVisualizerApp:
             swaps=self.metrics.swaps,
             writes=self.metrics.writes,
             elapsed=self.metrics.elapsed,
+            sorted_count=self.visualizer.sorted_count,
             array_size=self.array_size,
             speed_label=self.current_speed_label,
             speed_value=self.current_speed,
@@ -290,6 +295,7 @@ class SortingVisualizerApp:
         if not self.auto_running or self.generator is None:
             return
 
+        self.metrics.elapsed += dt
         self.step_accumulator += dt * self.current_speed
         steps = min(config.MAX_EVENTS_PER_FRAME, int(self.step_accumulator))
         if steps <= 0:
@@ -307,7 +313,6 @@ class SortingVisualizerApp:
             except StopIteration:
                 self._finish_sort()
                 return
-            self.metrics.elapsed += 1.0 / max(self.current_speed, 1)
             self._apply_event(event)
 
     def _apply_event(self, event: SortEvent) -> None:
@@ -375,4 +380,13 @@ class SortingVisualizerApp:
             width = min(width, max(960, display_width - 80))
             height = min(height, max(720, display_height - 80))
 
-        return width, height
+        return self._clamp_window_size((width, height))
+
+    def _clamp_window_size(self, size: tuple[int, int]) -> tuple[int, int]:
+        width, height = size
+        return max(config.MIN_WINDOW_WIDTH, int(width)), max(config.MIN_WINDOW_HEIGHT, int(height))
+
+    def _resize_window(self, size: tuple[int, int]) -> None:
+        clamped_size = self._clamp_window_size(size)
+        if clamped_size != self.screen.get_size():
+            self.screen = pygame.display.set_mode(clamped_size, pygame.RESIZABLE)

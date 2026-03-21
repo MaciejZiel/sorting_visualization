@@ -81,6 +81,10 @@ class BarVisualizer:
     def is_completion_active(self) -> bool:
         return self.finish_active
 
+    @property
+    def sorted_count(self) -> int:
+        return sum(1 for bar in self.bars if bar.sorted_locked)
+
     def set_canvas(self, rect: pygame.Rect) -> None:
         if rect.size != self.canvas.size or rect.topleft != self.canvas.topleft:
             self.canvas = rect.copy()

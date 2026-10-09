@@ -84,7 +84,7 @@ class SortingVisualizerApp:
                 elif event.type == pygame.KEYDOWN:
                     running = self._handle_key(event)
                 elif event.type in (pygame.VIDEORESIZE, pygame.WINDOWRESIZED):
-                    self._resize_window((event.x, event.y))
+                    self._resize_window(self._resize_size_from_event(event))
                 elif self.show_help and event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     self.show_help = False
                 else:
@@ -395,6 +395,18 @@ class SortingVisualizerApp:
     def _clamp_window_size(self, size: tuple[int, int]) -> tuple[int, int]:
         width, height = size
         return max(config.MIN_WINDOW_WIDTH, int(width)), max(config.MIN_WINDOW_HEIGHT, int(height))
+
+    def _resize_size_from_event(self, event: pygame.event.Event) -> tuple[int, int]:
+        size = getattr(event, "size", None)
+        if isinstance(size, tuple) and len(size) == 2:
+            return int(size[0]), int(size[1])
+
+        width = getattr(event, "x", getattr(event, "w", None))
+        height = getattr(event, "y", getattr(event, "h", None))
+        if width is not None and height is not None:
+            return int(width), int(height)
+
+        return self.screen.get_size()
 
     def _resize_window(self, size: tuple[int, int]) -> None:
         clamped_size = self._clamp_window_size(size)

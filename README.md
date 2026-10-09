@@ -102,3 +102,7 @@ The layout before the refinement pass, kept for comparison:
 
 - Python 3.11+
 - `pygame`
+
+## License
+
+MIT License, see [LICENSE](LICENSE).

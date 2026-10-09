@@ -2,6 +2,8 @@
 
 Neon Sorting Studio is a polished desktop sorting visualizer built with Python and Pygame. It focuses on smooth bar motion, a clean dark neon aesthetic, and responsive controls for exploring classic sorting algorithms.
 
+![Neon Sorting Studio running Bubble Sort](docs/ui_after_refine_large.png)
+
 ## Features
 
 - Bubble Sort, Selection Sort, Insertion Sort, Merge Sort, and Quick Sort
@@ -22,6 +24,7 @@ sorting_visualization/
 ├── main.py
 ├── requirements.txt
 ├── README.md
+├── docs/
 └── sorting_visualizer/
     ├── __init__.py
     ├── app.py
@@ -84,6 +87,16 @@ python -m unittest discover -s tests -v
 - `sorting_visualizer/renderer.py`: animated bar renderer and scene background
 - `sorting_visualizer/ui.py`: layout, control widgets, stats cards, and help overlay
 - `sorting_visualizer/drawing.py`: shared drawing helpers and cached panel/glow primitives
+
+## Screenshots
+
+Default window size after the UI refinement pass:
+
+![Neon Sorting Studio at the default window size](docs/ui_after_refine.png)
+
+The layout before the refinement pass, kept for comparison:
+
+![Earlier layout before the UI refinement pass](docs/ui_before_refine.png)
 
 ## Dependency List
 
